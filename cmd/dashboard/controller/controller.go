@@ -299,7 +299,11 @@ func newCustomWriter(c *gin.Context, code int) *ginCustomWriter {
 }
 
 func (w *ginCustomWriter) WriteHeader(code int) {
-	w.ResponseWriter.WriteHeader(w.customCode)
+	if (w.customCode != 0) {
+		w.ResponseWriter.WriteHeader(w.customCode)
+		return
+	} 
+	w.ResponseWriter.WriteHeader(code)
 }
 
 func fileWithCustomStatusCode(c *gin.Context, filepath string, customCode int) {
@@ -329,14 +333,14 @@ func fallbackToFrontend(frontendDist fs.FS) func(*gin.Context) {
 	}
 	return func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api") {
-			c.JSON(http.StatusNotFound, newErrorResponse(errors.New("404 Not Found")))
+			c.JSON(http.StatusOK, newErrorResponse(errors.New("404 Not Found")))
 			return
 		}
 		if strings.HasPrefix(c.Request.URL.Path, "/dashboard") {
 			stripPath := strings.TrimPrefix(c.Request.URL.Path, "/dashboard")
 			localFilePath := path.Join(singleton.Conf.AdminTemplate, stripPath)
 			statusCode := utils.IfOr(stripPath == "/", http.StatusOK, http.StatusNotFound)
-			if checkLocalFileOrFs(c, frontendDist, localFilePath, http.StatusOK) {
+			if checkLocalFileOrFs(c, frontendDist, localFilePath, 0) {
 				return
 			}
 			if !checkLocalFileOrFs(c, frontendDist, singleton.Conf.AdminTemplate+"/index.html", statusCode) {
@@ -345,7 +349,7 @@ func fallbackToFrontend(frontendDist fs.FS) func(*gin.Context) {
 			return
 		}
 		localFilePath := path.Join(singleton.Conf.UserTemplate, c.Request.URL.Path)
-		if checkLocalFileOrFs(c, frontendDist, localFilePath, http.StatusOK) {
+		if checkLocalFileOrFs(c, frontendDist, localFilePath, 0) {
 			return
 		}
 		statusCode := utils.IfOr(c.Request.URL.Path == "/", http.StatusOK, http.StatusNotFound)
