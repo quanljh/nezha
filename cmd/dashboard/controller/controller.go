@@ -339,7 +339,7 @@ func fallbackToFrontend(frontendDist fs.FS) func(*gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/dashboard") {
 			stripPath := strings.TrimPrefix(c.Request.URL.Path, "/dashboard")
 			localFilePath := path.Join(singleton.Conf.AdminTemplate, stripPath)
-			statusCode := utils.IfOr(stripPath == "/", http.StatusOK, http.StatusNotFound)
+			statusCode := utils.IfOr(stripPath == "/404", http.StatusNotFound, http.StatusOK)
 			if checkLocalFileOrFs(c, frontendDist, localFilePath, 0) {
 				return
 			}
@@ -352,7 +352,7 @@ func fallbackToFrontend(frontendDist fs.FS) func(*gin.Context) {
 		if checkLocalFileOrFs(c, frontendDist, localFilePath, 0) {
 			return
 		}
-		statusCode := utils.IfOr(c.Request.URL.Path == "/", http.StatusOK, http.StatusNotFound)
+		statusCode := utils.IfOr(c.Request.URL.Path == "/404", http.StatusNotFound, http.StatusOK)
 		if !checkLocalFileOrFs(c, frontendDist, singleton.Conf.UserTemplate+"/index.html", statusCode) {
 			c.JSON(http.StatusNotFound, newErrorResponse(errors.New("404 Not Found")))
 		}
